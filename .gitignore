@@ -1,0 +1,13 @@
+data/reactome/
+data/string/
+data/go/
+data/wikipathways/
+data/uniprot/
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+*.sgsnap

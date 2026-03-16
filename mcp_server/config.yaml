@@ -1,0 +1,178 @@
+# Pathways KG — custom MCP tools for samyama-mcp-serve
+#
+# Auto-generated tools handle: search/get/count per label (9),
+# find_connections/traverse per edge type (30), algorithms (5), generic (2).
+# These custom tools add biology-specific aggregation queries.
+
+include_node_tools: true
+include_edge_tools: true
+include_vector_tools: false
+include_algorithm_tools: true
+
+custom_tools:
+
+  - name: pathway_members
+    description: "All proteins participating in a pathway. Search by pathway name (partial match). Returns UniProt ID, protein name, and gene symbol."
+    cypher_template: >
+      MATCH (p:Protein)-[:PARTICIPATES_IN]->(pw:Pathway)
+      WHERE pw.name CONTAINS '{pathway_name}'
+      RETURN p.uniprot_id AS uniprot_id, p.name AS protein_name,
+             p.gene_name AS gene_name, pw.name AS pathway
+      ORDER BY p.gene_name LIMIT {limit}
+    parameters:
+      - {name: pathway_name, type: str}
+      - {name: limit, type: int, default: 50}
+
+  - name: protein_pathways
+    description: "All pathways a protein participates in. Search by gene name (exact match) or protein name (partial match). Returns pathway name, source database, and Reactome/WikiPathways IDs."
+    cypher_template: >
+      MATCH (p:Protein)-[:PARTICIPATES_IN]->(pw:Pathway)
+      WHERE p.gene_name CONTAINS '{gene_name}'
+      RETURN pw.name AS pathway, pw.source AS source,
+             pw.reactome_id AS reactome_id, pw.wp_id AS wp_id
+      ORDER BY pw.name LIMIT {limit}
+    parameters:
+      - {name: gene_name, type: str}
+      - {name: limit, type: int, default: 50}
+
+  - name: interaction_partners
+    description: "Protein-protein interaction partners from STRING above a confidence threshold. Search by gene name. Returns partner gene name, protein name, and combined interaction score."
+    cypher_template: >
+      MATCH (p1:Protein)-[i:INTERACTS_WITH]-(p2:Protein)
+      WHERE p1.gene_name CONTAINS '{gene_name}'
+        AND i.combined_score >= {min_score}
+      RETURN p2.gene_name AS partner_gene, p2.name AS partner_name,
+             p2.uniprot_id AS uniprot_id, i.combined_score AS score
+      ORDER BY i.combined_score DESC LIMIT {limit}
+    parameters:
+      - {name: gene_name, type: str}
+      - {name: min_score, type: int, default: 700}
+      - {name: limit, type: int, default: 20}
+
+  - name: shared_pathways
+    description: "Pathways shared between two proteins. Provide two gene names to find common pathway memberships. Useful for understanding functional overlap."
+    cypher_template: >
+      MATCH (a:Protein)-[:PARTICIPATES_IN]->(pw:Pathway)<-[:PARTICIPATES_IN]-(b:Protein)
+      WHERE a.gene_name CONTAINS '{gene1}'
+        AND b.gene_name CONTAINS '{gene2}'
+      RETURN pw.name AS pathway, pw.source AS source,
+             pw.reactome_id AS reactome_id
+      ORDER BY pw.name LIMIT {limit}
+    parameters:
+      - {name: gene1, type: str}
+      - {name: gene2, type: str}
+      - {name: limit, type: int, default: 20}
+
+  - name: upstream_regulators
+    description: "Upstream regulators of a protein within N hops through INTERACTS_WITH edges. Returns regulator gene name, protein name, and hop distance. Use for signaling cascade analysis."
+    cypher_template: >
+      MATCH (p:Protein)
+      WHERE p.gene_name CONTAINS '{gene_name}'
+      MATCH (r:Protein)-[:INTERACTS_WITH*1..{max_hops}]->(p)
+      RETURN DISTINCT r.gene_name AS regulator_gene,
+             r.name AS regulator_name, r.uniprot_id AS uniprot_id
+      LIMIT {limit}
+    parameters:
+      - {name: gene_name, type: str}
+      - {name: max_hops, type: int, default: 3}
+      - {name: limit, type: int, default: 20}
+
+  - name: pathway_crosstalk
+    description: "Find pathways connected to a given pathway through shared proteins. Returns connected pathway name and number of shared proteins. Useful for understanding pathway cross-talk."
+    cypher_template: >
+      MATCH (pw1:Pathway)<-[:PARTICIPATES_IN]-(p:Protein)-[:PARTICIPATES_IN]->(pw2:Pathway)
+      WHERE pw1.name CONTAINS '{pathway_name}'
+        AND pw2.name <> pw1.name
+      RETURN pw2.name AS connected_pathway, pw2.source AS source,
+             count(p) AS shared_proteins
+      ORDER BY shared_proteins DESC LIMIT {limit}
+    parameters:
+      - {name: pathway_name, type: str}
+      - {name: limit, type: int, default: 20}
+
+  - name: drug_pathway_impact
+    description: "Pathways impacted by a drug through its protein targets. Search by drug name. Returns pathway names and which target genes link the drug to each pathway."
+    cypher_template: >
+      MATCH (d:Drug)-[:TARGETS]->(p:Protein)-[:PARTICIPATES_IN]->(pw:Pathway)
+      WHERE d.name CONTAINS '{drug_name}'
+      RETURN pw.name AS pathway, collect(DISTINCT p.gene_name) AS targeted_genes,
+             count(DISTINCT p) AS target_count
+      ORDER BY target_count DESC LIMIT {limit}
+    parameters:
+      - {name: drug_name, type: str}
+      - {name: limit, type: int, default: 20}
+
+  - name: disease_pathways
+    description: "Pathways associated with a disease through gene/protein links. Search by disease name. Returns pathway names and number of associated genes."
+    cypher_template: >
+      MATCH (dis:Disease)<-[:ASSOCIATED_WITH]-(p:Protein)-[:PARTICIPATES_IN]->(pw:Pathway)
+      WHERE dis.name CONTAINS '{disease_name}'
+      RETURN DISTINCT pw.name AS pathway, pw.source AS source,
+             count(DISTINCT p) AS gene_count
+      ORDER BY gene_count DESC LIMIT {limit}
+    parameters:
+      - {name: disease_name, type: str}
+      - {name: limit, type: int, default: 20}
+
+  - name: go_enrichment
+    description: "GO terms enriched among proteins in a pathway. Search by pathway name and GO namespace (biological_process, molecular_function, cellular_component). Returns GO term ID, name, and protein count."
+    cypher_template: >
+      MATCH (p:Protein)-[:PARTICIPATES_IN]->(pw:Pathway)
+      WHERE pw.name CONTAINS '{pathway_name}'
+      MATCH (p)-[:ANNOTATED_WITH]->(go:GOTerm)
+      WHERE go.namespace CONTAINS '{namespace}'
+      RETURN go.go_id AS go_id, go.name AS go_term,
+             count(DISTINCT p) AS protein_count
+      ORDER BY protein_count DESC LIMIT {limit}
+    parameters:
+      - {name: pathway_name, type: str}
+      - {name: namespace, type: str, default: "biological_process"}
+      - {name: limit, type: int, default: 20}
+
+  - name: reaction_details
+    description: "Inputs, outputs, and catalysts of a reaction. Search by reaction name. Returns reaction name and lists of input compounds/proteins, output compounds/proteins, and catalyst proteins."
+    cypher_template: >
+      MATCH (r:Reaction) WHERE r.name CONTAINS '{reaction_name}'
+      OPTIONAL MATCH (inp)-[:INPUT_OF]->(r)
+      OPTIONAL MATCH (outp)<-[:OUTPUT_OF]-(r)
+      OPTIONAL MATCH (cat)-[:CATALYZES]->(r)
+      RETURN r.name AS reaction, r.reactome_id AS reactome_id,
+             collect(DISTINCT inp.name) AS inputs,
+             collect(DISTINCT outp.name) AS outputs,
+             collect(DISTINCT cat.name) AS catalysts
+      LIMIT {limit}
+    parameters:
+      - {name: reaction_name, type: str}
+      - {name: limit, type: int, default: 10}
+
+  - name: protein_function_summary
+    description: "Complete functional profile of a protein: pathways, GO biological processes, and disease associations. Search by gene name. Provides a holistic view for target assessment."
+    cypher_template: >
+      MATCH (p:Protein) WHERE p.gene_name CONTAINS '{gene_name}'
+      OPTIONAL MATCH (p)-[:PARTICIPATES_IN]->(pw:Pathway)
+      OPTIONAL MATCH (p)-[:ANNOTATED_WITH]->(go:GOTerm)
+      WHERE go.namespace = 'biological_process'
+      OPTIONAL MATCH (p)-[:ASSOCIATED_WITH]->(dis:Disease)
+      RETURN p.name AS protein_name, p.gene_name AS gene_name,
+             p.uniprot_id AS uniprot_id,
+             collect(DISTINCT pw.name) AS pathways,
+             collect(DISTINCT go.name) AS go_processes,
+             collect(DISTINCT dis.name) AS diseases
+      LIMIT {limit}
+    parameters:
+      - {name: gene_name, type: str}
+      - {name: limit, type: int, default: 5}
+
+  - name: pathway_hierarchy
+    description: "Parent and child pathways in the Reactome hierarchy. Search by pathway name. Returns the pathway's parent pathways and sub-pathways (children)."
+    cypher_template: >
+      MATCH (pw:Pathway) WHERE pw.name CONTAINS '{pathway_name}'
+      OPTIONAL MATCH (pw)-[:CHILD_OF]->(parent:Pathway)
+      OPTIONAL MATCH (child:Pathway)-[:CHILD_OF]->(pw)
+      RETURN pw.name AS pathway, pw.reactome_id AS reactome_id,
+             collect(DISTINCT parent.name) AS parent_pathways,
+             collect(DISTINCT child.name) AS sub_pathways
+      LIMIT {limit}
+    parameters:
+      - {name: pathway_name, type: str}
+      - {name: limit, type: int, default: 10}
