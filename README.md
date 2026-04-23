@@ -2,6 +2,9 @@
 
 **119K nodes. 835K edges. Every human biological pathway, protein interaction, and GO annotation in one graph.**
 
+> Part of the **Samyama** ecosystem — loaded into and queried via the graph engine at [samyama-ai/samyama-graph](https://github.com/samyama-ai/samyama-graph).
+> This repo holds the loader and source-data specifics for the KG.
+
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="License"></a>
 
 ---
