@@ -208,6 +208,7 @@ def _load_pathway_hierarchy(
 
 def _load_proteins_and_participation(
     client, data_dir: Path, registry: Registry, tenant: str,
+    max_human_rows: int | None = None,
 ) -> dict:
     """Parse UniProt2Reactome_All_Levels.txt.
 
@@ -215,6 +216,12 @@ def _load_proteins_and_participation(
         uniprot_id \\t reactome_id \\t url \\t pathway_name \\t evidence \\t organism
 
     Creates Protein nodes (deduped) and PARTICIPATES_IN edges to Pathways.
+
+    Args:
+        max_human_rows: If set, stop after processing this many human rows.
+            Used by the lightweight demo to load a representative subset
+            quickly (edges are created one-by-one, so the full ~900K-row
+            file is slow). None = load everything.
     """
     filepath = _reactome_dir(data_dir) / "UniProt2Reactome_All_Levels.txt"
     rows = _read_tsv_lines(filepath)
@@ -225,9 +232,12 @@ def _load_proteins_and_participation(
     proteins_created = 0
     edges_created = 0
     skipped = 0
+    human_seen = 0
 
     for cols in rows:
         prog.tick()
+        if max_human_rows is not None and human_seen >= max_human_rows:
+            break
         if len(cols) < 6:
             prog.error()
             continue
@@ -241,6 +251,8 @@ def _load_proteins_and_participation(
         if organism != HUMAN:
             skipped += 1
             continue
+
+        human_seen += 1
 
         # Create Protein node if not seen
         if uniprot_id not in registry.proteins:

@@ -2,6 +2,8 @@
 
 **119K nodes. 835K edges. Every human biological pathway, protein interaction, and GO annotation in one graph.**
 
+![Pathways KG terminal demo](demo/pathways.gif)
+
 > Part of the **Samyama** ecosystem — loaded into and queried via the graph engine at [samyama-ai/samyama-graph](https://github.com/samyama-ai/samyama-graph).
 > This repo holds the loader and source-data specifics for the KG.
 
@@ -30,6 +32,34 @@ ORDER BY partners DESC LIMIT 5
 **TP53 -- the most connected hub in the human interactome.** Powered by [Samyama Graph](https://github.com/samyama-ai/samyama-graph).
 
 [See all 100 benchmark queries →](https://samyama-ai.github.io/samyama-graph-book/biomedical_benchmark.html)
+
+---
+
+## Demo
+
+A narrated terminal walkthrough — loads a real Reactome subset and answers four
+pathway-biology questions in plain Cypher (hierarchy, protein hub-centrality,
+protein-dense pathways).
+
+The demo loads a fast, representative subset of REAL Reactome data: all 2,848
+human pathways and their CHILD_OF hierarchy, plus the first 40,000 human
+protein-participation rows from UniProt2Reactome (2,745 proteins, 35,160
+PARTICIPATES_IN edges). Edges are created one-by-one, so this caps the
+~900K-row participation file to keep the demo under a minute. Load the full KG
+with `python -m etl.loader --data-dir data`.
+
+```bash
+# Run
+source ~/projects/venv/bin/activate
+PYTHONUNBUFFERED=1 python -m demo.demo
+
+# Re-record
+asciinema rec --overwrite --cols 92 --rows 32 --idle-time-limit 2.0 \
+  -c "bash -c 'source ~/projects/venv/bin/activate && PYTHONUNBUFFERED=1 python -m demo.demo'" \
+  demo/pathways.cast
+agg demo/pathways.cast demo/pathways.gif
+aws s3 cp demo/pathways.gif s3://samyama-data/demos/pathways.gif
+```
 
 ---
 

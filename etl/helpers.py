@@ -8,24 +8,32 @@ from __future__ import annotations
 import re
 import time
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 
 def _escape(value: str) -> str:
-    """Sanitize a string for embedding in Cypher literals."""
+    """Sanitize a string for embedding in a double-quoted Cypher literal.
+
+    Samyama's PEG parser only accepts double-quoted strings; single-quote
+    escaping (\\' or '') fails to parse. We therefore emit double-quoted
+    literals and escape only backslash and the double-quote char.
+    """
     if not isinstance(value, str):
         return str(value)
-    return value.replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"')
+    return value.replace("\\", "\\\\").replace('"', '\\"')
 
 
 def _q(val) -> str:
-    """Quote a value for Cypher: strings get single quotes, numbers/bools pass through."""
+    """Quote a value for Cypher: strings get double quotes, numbers/bools pass through."""
     if val is None:
         return "null"
     if isinstance(val, bool):
         return "true" if val else "false"
-    if isinstance(val, (int, float)):
+    if isinstance(val, float):
+        return str(Decimal(repr(val)))
+    if isinstance(val, int):
         return str(val)
-    return f"'{_escape(str(val))}'"
+    return f'"{_escape(str(val))}"'
 
 
 def _prop_str(props: dict) -> str:
