@@ -35,6 +35,18 @@ ORDER BY partners DESC LIMIT 5
 
 ---
 
+## Documentation
+
+New here? Start with the guides:
+
+| Guide | What it covers |
+|-------|----------------|
+| **[GETTING_STARTED.md](GETTING_STARTED.md)** | prerequisites (Python ≥ 3.10) · install · run the engine (Docker) · load the graph · first query |
+| **[docs/QUERYING.md](docs/QUERYING.md)** | ask questions via **MCP (Claude)**, the **HTTP API**, or the **Samyama CLI** |
+| [Biomedical Benchmark](https://samyama-ai.github.io/samyama-graph-book/biomedical_benchmark.html) | 100 example queries |
+
+---
+
 ## Demo
 
 A narrated terminal walkthrough — loads a real Reactome subset and answers four
@@ -73,28 +85,28 @@ aws s3 cp demo/pathways.gif s3://samyama-data/demos/pathways.gif
 
 ## Quick Start
 
+**Full walkthrough → [GETTING_STARTED.md](GETTING_STARTED.md)** (prerequisites, Docker, loading, querying).
+
 ### Load from snapshot (recommended)
 
-```bash
-# Download (9.6 MB)
-curl -LO https://github.com/samyama-ai/samyama-graph/releases/download/kg-snapshots-v3/pathways.sgsnap
+Needs **Python ≥ 3.10** for the tooling and **Docker** for the engine:
 
-# Start Samyama and import
-./target/release/samyama
-curl -X POST http://localhost:8080/api/tenants \
-  -H 'Content-Type: application/json' \
-  -d '{"id":"pathways","name":"Biological Pathways KG"}'
-curl -X POST http://localhost:8080/api/tenants/pathways/snapshot/import \
-  -F "file=@pathways.sgsnap"
+```bash
+pip install -r requirements.txt
+docker run --rm -p 8080:8080 -p 6379:6379 public.ecr.aws/f9f6l5u4/samyama-graph:1.1.0
+
+curl -LO https://github.com/samyama-ai/samyama-graph/releases/download/kg-snapshots-v3/pathways.sgsnap  # ~9.6 MB
+curl -X POST http://localhost:8080/api/tenants -H 'Content-Type: application/json' -d '{"id":"pathways","name":"Pathways KG"}'
+curl -X POST http://localhost:8080/api/tenants/pathways/snapshot/import -F "file=@pathways.sgsnap"
 ```
 
 ### Build from source
 
 ```bash
 git clone https://github.com/samyama-ai/pathways-kg.git && cd pathways-kg
-pip install -e .
+pip install -r requirements.txt          # or: pip install -e ".[dev]" for tests
 python -m etl.download_data --data-dir data        # ~1.9 GB
-python -m etl.loader --data-dir data --url http://localhost:8080
+python -m etl.loader --data-dir data --url http://localhost:8080     # → pathways tenant
 ```
 
 ## Example Queries
@@ -111,6 +123,16 @@ MATCH (tp53:Protein {name: 'TP53'})-[:INTERACTS_WITH]-(hop1:Protein)-[:INTERACTS
 WHERE hop2 <> tp53
 RETURN DISTINCT hop2.name AS protein LIMIT 15
 ```
+
+## Use with Claude (MCP)
+
+```bash
+python -m mcp_server.server --url http://localhost:8080 --graph pathways   # against a running engine
+python -m mcp_server.server --data-dir data                               # embedded, loads on startup
+python -m mcp_server.server --url http://localhost:8080 --list-tools       # see all tools
+```
+
+Register it with Claude and ask in natural language — full steps in **[docs/QUERYING.md](docs/QUERYING.md)**.
 
 ## Part of the Biomedical Trifecta
 

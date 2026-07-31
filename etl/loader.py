@@ -25,6 +25,10 @@ from etl.helpers import Registry
 
 ALL_PHASES = ["reactome", "string", "go", "wikipathways", "uniprot"]
 
+# Default tenant/graph. Matches the published snapshot's tenant and the MCP
+# server's --graph default, so build-from-source and snapshot agree.
+GRAPH = "pathways"
+
 
 def _run_phase(
     phase: str,
@@ -35,7 +39,7 @@ def _run_phase(
     organism: str = "human",
     string_threshold: int = 700,
     go_exclude_iea: bool = False,
-    tenant: str = "default",
+    tenant: str = GRAPH,
 ) -> dict:
     """Dispatch to the appropriate phase loader.
 
@@ -112,7 +116,7 @@ def load_pathways(
     organism: str = "human",
     string_threshold: int = 700,
     go_exclude_iea: bool = False,
-    tenant: str = "default",
+    tenant: str = GRAPH,
 ) -> dict:
     """Load biological pathways data into the knowledge graph.
 
@@ -293,8 +297,8 @@ def main():
     )
     parser.add_argument(
         "--tenant",
-        default="default",
-        help="Graph tenant name (default: default)",
+        default=GRAPH,
+        help="Graph tenant name (default: %(default)s)",
     )
     parser.add_argument(
         "--url",
