@@ -66,6 +66,11 @@ def main(argv: list[str] | None = None) -> None:
         default="Pathways KG",
         help="MCP server name.",
     )
+    parser.add_argument(
+        "--graph",
+        default="pathways",
+        help="Graph/tenant to serve (default: %(default)s; matches etl.loader.GRAPH).",
+    )
 
     args = parser.parse_args(argv)
 
@@ -85,7 +90,7 @@ def main(argv: list[str] | None = None) -> None:
 
     config = ToolConfig.from_yaml(config_path)
     server = SamyamaMCPServer(
-        client, server_name=args.name, config=config
+        client, graph=args.graph, server_name=args.name, config=config
     )
 
     if args.list_tools:

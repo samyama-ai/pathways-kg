@@ -1,0 +1,8 @@
+# Runtime dependencies for the Pathways Knowledge Graph.
+# Mirrors [project.dependencies] in pyproject.toml — `pip install .` works too.
+# Requires Python >= 3.10 (the samyama SDK).
+samyama>=0.6.0
+requests>=2.31
+rich>=13.0
+click>=8.0
+fastmcp>=0.1.0
