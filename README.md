@@ -138,6 +138,8 @@ Register it with Claude and ask in natural language — full steps in **[docs/QU
 
 This KG is one of three biomedical knowledge graphs that together form Samyama's billion-edge benchmark: [Clinical Trials](https://github.com/samyama-ai/clinicaltrials-kg) (27M edges) + **Pathways** (835K edges) + [Drug Interactions](https://github.com/samyama-ai/druginteractions-kg) (388K edges), merged on load with [PubMed](https://github.com/samyama-ai/pubmed-kg) (1.04B edges).
 
+These four graphs are also loaded as part of a larger merged corpus — fifteen KGs plus two synthetic patient cohorts in a single store. [BiomedQA](https://github.com/samyama-ai/biomedqa#beyond-the-benchmark-a-318m-node-corpus) has the node, edge and merge counts, and states how and when they were measured.
+
 ## Links
 
 | | |
