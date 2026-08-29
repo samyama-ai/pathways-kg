@@ -60,7 +60,7 @@ STRING_FILES = {
 
 GO_FILES = {
     "go.json.gz": (
-        "http://release.geneontology.org/2024-06-17/ontology/go.json.gz"
+        "http://current.geneontology.org/ontology/go.json"
     ),
     "goa_human.gaf.gz": (
         "http://geneontology.org/gene-associations/goa_human.gaf.gz"
@@ -70,7 +70,7 @@ GO_FILES = {
 WIKIPATHWAYS_FILES = {
     "wikipathways-Homo_sapiens.gmt": (
         "https://data.wikipathways.org/current/gmt/"
-        "wikipathways-20240310-gmt-Homo_sapiens.gmt"
+        "wikipathways-20260810-gmt-Homo_sapiens.gmt"
     ),
 }
 

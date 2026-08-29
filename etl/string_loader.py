@@ -36,6 +36,17 @@ def _strip_species(ensp_id: str) -> str:
     return ensp_id
 
 
+def _resolve(data_dir: str, subdir: str, filename: str) -> str:
+    """Find a source file whether the downloader wrote it flat or under a subdirectory.
+
+    `etl/download_data.py` writes STRING and GO files into `data/<source>/`, while these
+    two loaders historically read them from a flat `data/`. The other three loaders read
+    subdirectories. Accept both so either layout loads.
+    """
+    nested = os.path.join(data_dir, subdir, filename)
+    return nested if os.path.exists(nested) else os.path.join(data_dir, filename)
+
+
 def _build_uniprot_map(aliases_path: str) -> dict[str, str]:
     """Build ENSP -> UniProt accession mapping from the aliases file.
 
@@ -104,9 +115,9 @@ def load_string(
     Returns:
         Dict with loading statistics.
     """
-    aliases_path = os.path.join(data_dir, "9606.protein.aliases.v12.0.txt")
-    info_path = os.path.join(data_dir, "9606.protein.info.v12.0.txt")
-    links_path = os.path.join(data_dir, "9606.protein.links.v12.0.txt")
+    aliases_path = _resolve(data_dir, "string", "9606.protein.aliases.v12.0.txt")
+    info_path = _resolve(data_dir, "string", "9606.protein.info.v12.0.txt")
+    links_path = _resolve(data_dir, "string", "9606.protein.links.v12.0.txt")
 
     # ------------------------------------------------------------------
     # Step 1: Build ID mappings

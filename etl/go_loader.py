@@ -192,6 +192,15 @@ def _parse_gaf(
 # Public loader
 # ---------------------------------------------------------------------------
 
+def _resolve(data_dir: str, subdir: str, filename: str) -> str:
+    """Find a source file whether the downloader wrote it flat or under a subdirectory.
+
+    See the matching helper in `etl/string_loader.py`.
+    """
+    nested = os.path.join(data_dir, subdir, filename)
+    return nested if os.path.exists(nested) else os.path.join(data_dir, filename)
+
+
 def load_go(
     client,
     data_dir: str,
@@ -211,8 +220,8 @@ def load_go(
     Returns:
         Dict with loading statistics.
     """
-    go_json_path = os.path.join(data_dir, "go.json")
-    gaf_path = os.path.join(data_dir, "goa_human.gaf")
+    go_json_path = _resolve(data_dir, "go", "go.json")
+    gaf_path = _resolve(data_dir, "go", "goa_human.gaf")
 
     # ------------------------------------------------------------------
     # Step 1: Create index on GOTerm(go_id)
