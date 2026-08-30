@@ -52,7 +52,6 @@ def _run_phase(
             client,
             data_dir=data_dir,
             registry=registry,
-            organism=organism,
             tenant=tenant,
         )
 
@@ -85,7 +84,6 @@ def _run_phase(
             client,
             data_dir=data_dir,
             registry=registry,
-            organism=organism,
             tenant=tenant,
         )
 
@@ -96,7 +94,6 @@ def _run_phase(
             client,
             data_dir=data_dir,
             registry=registry,
-            organism=organism,
             tenant=tenant,
         )
 
