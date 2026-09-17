@@ -1,5 +1,5 @@
 ---
-license: other
+license: cc-by-4.0
 pretty_name: Pathways Knowledge Graph
 tags:
   - knowledge-graph
@@ -29,13 +29,10 @@ size_categories:
 
 ## Provenance and licence
 
-Apache 2.0
+Apache 2.0 covers the loader. The five sources are CC0 (Reactome, WikiPathways) and
+CC BY 4.0 (STRING v12.0, Gene Ontology, UniProt), so **the derived graph is redistributable
+under CC BY 4.0** with attribution to all five. See [`DATA-LICENSES.md`](DATA-LICENSES.md).
 
-> ⚠️ **The licence above covers this repository's code, not the data.** This graph is
-> derived from an upstream source (Reactome, STRING v12.0, Gene Ontology, WikiPathways, UniProt (all human, organism 9606)), whose
-> own terms govern redistribution and are **not stated here**. Establish and record them
-> before redistributing or quoting this dataset. The frontmatter is therefore
-> `license: other` rather than `apache-2.0`.
 
 ## Reproducing
 
